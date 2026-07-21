@@ -14,7 +14,7 @@ const About = () => {
   const imageClip = useTransform(
     scrollYProgress,
     [0, 0.4],
-    ["inset(0% 0% 100% 0%)", "inset(0% 0% 0% 0%)"]
+    ["inset(0% 0% 100% 0%)", "inset(0% 0% 0% 0%)"],
   );
   const imageRotate = useTransform(scrollYProgress, [0, 0.5], [-3, 0]);
 
@@ -22,7 +22,7 @@ const About = () => {
     <section
       ref={sectionRef}
       id="about"
-      className="w-full py-24 px-6 lg:px-20 xl:px-32 scroll-mt-20 bg-white dark:bg-darkTheme text-black dark:text-white overflow-hidden"
+      className="w-full py-10 px-6 lg:px-20 xl:px-32 scroll-mt-20 bg-white dark:bg-darkTheme text-black dark:text-white overflow-hidden"
     >
       {/* Heading — letters animate in one by one */}
       <div className="flex items-baseline gap-4 mb-16 max-w-5xl mx-auto">
@@ -150,27 +150,27 @@ const About = () => {
             </motion.span>
             <div className="flex flex-wrap gap-3 mt-4">
               {toolsData.map((tool, index) => (
-              <motion.div
-  key={index}
-  initial={{ opacity: 0, scale: 0, rotate: -20 }}
-  whileInView={{ opacity: 1, scale: 1, rotate: 0 }}
-  viewport={{ once: true }}
-  transition={{
-    duration: 0.4,
-    delay: index * 0.08,
-    type: "spring",
-    stiffness: 200,
-  }}
-  whileHover={{
-    y: -4,
-    rotate: [0, -8, 8, 0],
-    transition: {
-      rotate: { duration: 0.4, ease: "easeInOut" },
-      y: { type: "spring", stiffness: 300 },
-    },
-  }}
-  className="w-12 h-12 flex items-center justify-center border border-gray-300 dark:border-white/15 hover:border-black dark:hover:border-white transition-colors duration-300"
->
+                <motion.div
+                  key={index}
+                  initial={{ opacity: 0, scale: 0, rotate: -20 }}
+                  whileInView={{ opacity: 1, scale: 1, rotate: 0 }}
+                  viewport={{ once: true }}
+                  transition={{
+                    duration: 0.4,
+                    delay: index * 0.08,
+                    type: "spring",
+                    stiffness: 200,
+                  }}
+                  whileHover={{
+                    y: -4,
+                    rotate: [0, -8, 8, 0],
+                    transition: {
+                      rotate: { duration: 0.4, ease: "easeInOut" },
+                      y: { type: "spring", stiffness: 300 },
+                    },
+                  }}
+                  className="w-12 h-12 flex items-center justify-center border border-gray-300 dark:border-white/15 hover:border-black dark:hover:border-white transition-colors duration-300"
+                >
                   <Image src={tool} alt="Tool" className="w-6" />
                 </motion.div>
               ))}

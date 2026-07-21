@@ -74,7 +74,7 @@ const Contact = () => {
   return (
     <div
       id="contact"
-      className="w-full px-[6%] sm:px-[12%] py-24 scroll-mt-20 selection:bg-amber-400 selection:text-black"
+      className="w-full px-[6%] sm:px-[12%] py-10 scroll-mt-20 selection:bg-amber-400 selection:text-black"
     >
       <div className="text-center mb-12 select-none">
         <h4 className="mb-2 text-lg font-Ovo text-slate-600 dark:text-gray-400">
