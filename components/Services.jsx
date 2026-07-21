@@ -1,5 +1,6 @@
 "use client";
-import { motion } from "framer-motion";
+import { useRef } from "react";
+import { motion, useScroll, useTransform } from "framer-motion";
 
 const services = [
   {
@@ -48,7 +49,7 @@ const services = [
     title: "Full-Stack Apps",
     description:
       "Delivering complete end-to-end web applications, from database to deployed frontend.",
-    color: "#22D3EE",
+    color: "#818CF8",
     icon: (
       <>
         <rect x="3" y="4" width="18" height="12" rx="1.5" />
@@ -58,83 +59,100 @@ const services = [
   },
 ];
 
-const rotations = [-6, -2, 3, 7];
+const StackCard = ({ service, index, total }) => {
+  const cardRef = useRef(null);
+  const { scrollYProgress } = useScroll({
+    target: cardRef,
+    offset: ["start end", "start start"],
+  });
 
-const gravitySpring = { type: "spring", stiffness: 200, damping: 12, mass: 1 };
+  const scale = useTransform(scrollYProgress, [0, 1], [0.85, 1]);
+  const y = useTransform(scrollYProgress, [0, 1], [60, 0]);
+  const opacity = useTransform(scrollYProgress, [0, 0.6, 1], [0, 0.6, 1]);
 
-const ServiceCard = ({ service, index }) => (
-  <motion.div
-    drag="y"
-    dragConstraints={{ top: -80, bottom: 0 }}
-    dragElastic={0.4}
-    dragTransition={{ bounceStiffness: 200, bounceDamping: 12 }}
-    initial={{ opacity: 0, y: -300, rotate: rotations[index] }}
-    whileInView={{
-      opacity: 1,
-      y: 0,
-      rotate: rotations[index],
-      transition: { ...gravitySpring, delay: index * 0.12 },
-    }}
-    viewport={{ once: true, amount: 0.3 }}
-    whileHover={{
-      rotate: 0,
-      x: 14,
-      y: -14,
-      zIndex: 20,
-      transition: { type: "spring", stiffness: 260, damping: 20 },
-    }}
-    whileTap={{ scale: 1.03, zIndex: 20 }}
-    style={{ zIndex: index, touchAction: "pan-x" }}
-    className="relative w-full max-w-xs sm:max-w-none sm:w-64 md:w-60 lg:w-64 flex-shrink-0 sm:-ml-10 sm:first:ml-0 rounded-2xl border border-slate-300 dark:border-white/10 bg-white dark:bg-slate-900 shadow-lg p-6 cursor-grab active:cursor-grabbing"
-  >
+  // Border glows amber once the card has fully settled into place
+  const borderColor = useTransform(
+    scrollYProgress,
+    [0.7, 1],
+    ["rgba(245, 158, 11, 0)", "rgba(245, 158, 11, 0.5)"],
+  );
+  const dotOpacity = useTransform(scrollYProgress, [0.75, 1], [0, 1]);
+
+  return (
     <div
-      className="w-11 h-11 rounded-xl flex items-center justify-center mb-5"
-      style={{ backgroundColor: `${service.color}1A` }}
+      ref={cardRef}
+      className="sticky"
+      style={{ top: `${80 + index * 24}px` }}
     >
-      <svg
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke={service.color}
-        strokeWidth="1.3"
-        className="w-6 h-6"
+      <motion.div
+        style={{ scale, y, opacity, borderColor }}
+        className="relative rounded-2xl sm:rounded-3xl border-2 bg-white dark:bg-slate-900 shadow-xl p-6 sm:p-10 flex flex-col sm:flex-row items-start sm:items-center gap-5 sm:gap-8 overflow-hidden"
       >
-        {service.icon}
-      </svg>
-    </div>
+        {/* Amber pulse — signals this card is now "active" */}
+        <motion.span
+          style={{ opacity: dotOpacity }}
+          className="absolute top-4 right-4 sm:top-6 sm:right-6 flex h-2.5 w-2.5"
+        >
+          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75" />
+          <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-amber-500" />
+        </motion.span>
 
-    <span className="text-xs font-mono text-slate-400 dark:text-white/20">
-      {service.number}
-    </span>
-    <h3 className="text-lg font-semibold mt-1 mb-2 text-slate-950 dark:text-white">
-      {service.title}
-    </h3>
-    <p className="text-sm text-slate-600 dark:text-gray-400 leading-6">
-      {service.description}
-    </p>
-  </motion.div>
-);
+        <div
+          className="w-16 h-16 sm:w-20 sm:h-20 flex-shrink-0 rounded-2xl flex items-center justify-center"
+          style={{ backgroundColor: `${service.color}1A` }}
+        >
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke={service.color}
+            strokeWidth="1.3"
+            className="w-8 h-8 sm:w-10 sm:h-10"
+          >
+            {service.icon}
+          </svg>
+        </div>
+
+        <div>
+          <span className="inline-flex items-center gap-1.5 text-xs font-mono px-2.5 py-1 rounded-full bg-amber-100 dark:bg-amber-400/10 text-amber-700 dark:text-amber-400">
+            {service.number} / {String(total).padStart(2, "0")}
+          </span>
+          <h3 className="text-xl sm:text-2xl font-Ovo mt-3 mb-2 text-slate-950 dark:text-white">
+            {service.title}
+          </h3>
+          <p className="text-sm sm:text-base text-slate-600 dark:text-gray-400 leading-relaxed">
+            {service.description}
+          </p>
+        </div>
+      </motion.div>
+    </div>
+  );
+};
 
 const Services = () => {
   return (
     <div
       id="services"
-      className="w-full py-10 px-[6%] sm:px-[12%] scroll-mt-20 bg-white/95 dark:bg-darkTheme text-slate-950 dark:text-white"
+      className="w-full py-16 sm:py-20 px-[6%] sm:px-[12%] scroll-mt-20 bg-white dark:bg-darkTheme text-slate-950 dark:text-white"
     >
-      <h4 className="text-center mb-2 text-lg font-Ovo">What I Offer</h4>
-      <h2 className="text-center text-4xl sm:text-5xl font-Ovo">My Services</h2>
+      <div className="text-center mb-12 sm:mb-16">
+        <h4 className="mb-2 text-base sm:text-lg font-Ovo text-amber-600 dark:text-amber-400">
+          What I Offer
+        </h4>
+        <h2 className="text-3xl sm:text-5xl font-Ovo">My Services</h2>
+        <p className="max-w-xl mx-auto mt-4 text-sm sm:text-base text-slate-600 dark:text-gray-400 font-Ovo">
+          I'm a MERN Stack &amp; Next.js developer who builds complete web
+          applications — from database to a polished, responsive frontend.
+        </p>
+      </div>
 
-      <p className="text-center max-w-2xl mx-auto mt-5 mb-4 font-Ovo text-slate-600 dark:text-gray-400 text-sm sm:text-base">
-        I'm a MERN Stack &amp; Next.js developer who builds complete web
-        applications — from database to a polished, responsive frontend.
-      </p>
-
-      <p className="text-center text-xs text-slate-400 dark:text-gray-600 mb-12 sm:mb-16 font-Ovo italic">
-        (try dragging a card up)
-      </p>
-
-      <div className="flex flex-col sm:flex-row items-center sm:items-stretch justify-center gap-6 sm:gap-0 max-w-4xl mx-auto pt-4 pb-8">
+      <div className="max-w-2xl mx-auto space-y-6 sm:space-y-8 pb-[30vh]">
         {services.map((service, index) => (
-          <ServiceCard key={index} service={service} index={index} />
+          <StackCard
+            key={index}
+            service={service}
+            index={index}
+            total={services.length}
+          />
         ))}
       </div>
     </div>
