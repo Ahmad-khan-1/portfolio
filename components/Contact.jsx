@@ -1,180 +1,292 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 
 const Contact = () => {
   const [result, setResult] = useState("");
-  const [status, setStatus] = useState("idle"); // idle | sending | success | error
+  const [status, setStatus] = useState("idle");
+  const [step, setStep] = useState(0); // 0: name, 1: email, 2: message, 3: done
+  const [values, setValues] = useState({ name: "", email: "", message: "" });
+  const [showTyping, setShowTyping] = useState(true);
+  const bottomRef = useRef(null);
+  const hasUserInteracted = useRef(false); // Strictly track real user steps
 
-  const onSubmit = async (event) => {
-    event.preventDefault();
+  const questions = [
+    "Hey! What's your name?",
+    (name) => `Nice to meet you, ${name || "there"}! What's your email?`,
+    "Got it. What would you like to say?",
+  ];
+
+  useEffect(() => {
+    setShowTyping(true);
+    const timer = setTimeout(() => setShowTyping(false), 600);
+    return () => clearTimeout(timer);
+  }, [step]);
+
+  // FIX: Pure component initialization aur layout shifts par scroll strictly block rahega
+  useEffect(() => {
+    if (!hasUserInteracted.current) {
+      return;
+    }
+    bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  }, [step, showTyping]);
+
+  const handleNext = (field) => (e) => {
+    e.preventDefault();
+    if (!values[field].trim()) return;
+    hasUserInteracted.current = true; // User ne agla step trigger kiya, ab internal scroll allowed hai
+    setStep((s) => s + 1);
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!values.message.trim()) return;
+    hasUserInteracted.current = true;
     setStatus("sending");
-    setResult("");
-    const formData = new FormData(event.target);
 
+    const formData = new FormData();
+    formData.append("name", values.name);
+    formData.append("email", values.email);
+    formData.append("message", values.message);
     formData.append("access_key", process.env.NEXT_PUBLIC_WEB3FORMS_KEY);
 
-    const response = await fetch("https://api.web3forms.com/submit", {
-      method: "POST",
-      body: formData,
-    });
+    try {
+      const response = await fetch("https://api.web3forms.com/submit", {
+        method: "POST",
+        body: formData,
+      });
+      const data = await response.json();
 
-    const data = await response.json();
-
-    if (data.success) {
-      setStatus("success");
-      setResult("Thanks — your message is on its way. I'll reply soon.");
-      event.target.reset();
-    } else {
+      if (data.success) {
+        setStatus("success");
+        setStep(3);
+        setResult("Thanks — I'll get back to you soon!");
+      } else {
+        setStatus("error");
+        setResult(data.message || "Something went wrong. Please try again.");
+      }
+    } catch (err) {
       setStatus("error");
-      setResult(data.message || "Something went wrong. Please try again.");
+      setResult("Connection error. Transmission failed.");
     }
   };
 
   return (
     <div
       id="contact"
-      className='w-full px-[12%] py-24 scroll-mt-20 bg-[url("/footer-bg-color.png")] bg-no-repeat bg-center bg-[length:90%_auto] dark:bg-none'
+      className="w-full px-[6%] sm:px-[12%] py-24 scroll-mt-20 selection:bg-amber-400 selection:text-black"
     >
-      <div className="max-w-5xl mx-auto grid grid-cols-1 lg:grid-cols-[1fr_1.4fr] gap-0 border border-slate-300 dark:border-white/10">
-        {/* Left panel — info */}
-        <div className="bg-slate-950 dark:bg-white text-white dark:text-slate-950 p-10 flex flex-col justify-between">
+      <div className="text-center mb-12 select-none">
+        <h4 className="mb-2 text-lg font-Ovo text-slate-600 dark:text-gray-400">
+          Connect
+        </h4>
+        <h2 className="text-5xl font-Ovo text-slate-950 dark:text-white">
+          Get in touch
+        </h2>
+      </div>
+
+      <div className="max-w-md mx-auto rounded-2xl border border-slate-300 dark:border-white/10 shadow-xl overflow-hidden bg-white dark:bg-black/20">
+        {/* Chat header */}
+        <div className="flex items-center gap-3 px-5 py-4 bg-slate-950 border-b border-slate-900 select-none">
+          <div className="w-9 h-9 rounded-full bg-amber-400 flex items-center justify-center text-slate-950 font-bold text-sm">
+            AM
+          </div>
           <div>
-            <span className="text-sm font-mono opacity-60">03</span>
-            <h2 className="text-3xl sm:text-4xl font-Ovo mt-4 mb-4">
-              Let's build something.
-            </h2>
-            <p className="text-sm leading-6 opacity-70 max-w-xs">
-              Open to full-stack roles and freelance MERN / Next.js projects.
-              Drop a message and I'll get back within a day or two.
+            <p className="text-sm font-medium text-white">Ahmad Mujtaba</p>
+            <p className="text-xs text-green-400 flex items-center gap-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
+              Usually replies within a day
             </p>
           </div>
-
-          <div className="mt-10 space-y-3 text-sm">
-            {/* FIXED: Added opening <a> tag for Email */}
-            <a
-              href="mailto:amanullahqurayshi@gmail.com"
-              className="flex items-center gap-3 hover:opacity-70 transition-opacity"
-            >
-              <span className="w-8 h-8 flex items-center justify-center border border-white/30 dark:border-slate-950/30 rounded-full">
-                ✉
-              </span>
-              amanullahqurayshi@gmail.com
-            </a>
-
-            {/* FIXED: Added opening <a> tag for GitHub */}
-            <a
-              href="https://github.com/Ahmad-khan-1"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-3 hover:opacity-70 transition-opacity"
-            >
-              <span className="w-8 h-8 flex items-center justify-center border border-white/30 dark:border-slate-950/30 rounded-full">
-                gh
-              </span>
-              GitHub
-            </a>
-
-            {/* FIXED: Added opening <a> tag for LinkedIn */}
-            <a
-              href="https://www.linkedin.com/in/ahmad-mujtaba-aman/"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-3 hover:opacity-70 transition-opacity"
-            >
-              <span className="w-8 h-8 flex items-center justify-center border border-white/30 dark:border-slate-950/30 rounded-full">
-                in
-              </span>
-              LinkedIn
-            </a>
-          </div>
         </div>
 
-        {/* Right panel — form */}
-        <div className="bg-white/95 dark:bg-darkTheme p-10">
-          <form onSubmit={onSubmit}>
-            <FormField name="name" label="Your name" type="text" />
-            <FormField name="email" label="Your email" type="email" />
-            <FormField name="message" label="Message" textarea />
+        {/* Chat body */}
+        <div className="bg-slate-50 dark:bg-zinc-950/40 p-5 h-[380px] overflow-y-auto flex flex-col gap-3.5">
+          {/* Question 1 */}
+          <Bubble from="them">{questions[0]}</Bubble>
+          {step > 0 && <Bubble from="me">{values.name}</Bubble>}
 
-            <motion.button
-              type="submit"
-              disabled={status === "sending"}
-              whileHover={{ x: 4 }}
-              whileTap={{ scale: 0.98 }}
-              className="mt-4 w-full sm:w-auto py-3 px-8 flex items-center justify-center gap-3 bg-black dark:bg-white text-white dark:text-black font-medium disabled:opacity-60"
-            >
-              {status === "sending" ? (
-                <>
-                  <motion.span
-                    animate={{ rotate: 360 }}
-                    transition={{
-                      duration: 0.8,
-                      repeat: Infinity,
-                      ease: "linear",
-                    }}
-                    className="w-4 h-4 border-2 border-white/40 dark:border-black/40 border-t-white dark:border-t-black rounded-full"
-                  />
-                  Sending
-                </>
+          {/* Question 2 */}
+          {step >= 1 && (
+            <>
+              {showTyping && step === 1 ? (
+                <TypingBubble />
               ) : (
-                <>Submit now →</>
+                <Bubble from="them">{questions[1](values.name)}</Bubble>
               )}
-            </motion.button>
+            </>
+          )}
+          {step > 1 && <Bubble from="me">{values.email}</Bubble>}
 
-            {result && (
-              <motion.p
-                initial={{ opacity: 0, y: -6 }}
-                animate={{ opacity: 1, y: 0 }}
-                className={`mt-4 text-sm ${
-                  status === "success"
-                    ? "text-green-600 dark:text-green-400"
-                    : "text-red-600 dark:text-red-400"
-                }`}
-              >
-                {result}
-              </motion.p>
-            )}
-          </form>
+          {/* Question 3 */}
+          {step >= 2 && (
+            <>
+              {showTyping && step === 2 ? (
+                <TypingBubble />
+              ) : (
+                <Bubble from="them">{questions[2]}</Bubble>
+              )}
+            </>
+          )}
+          {step > 2 && <Bubble from="me">{values.message}</Bubble>}
+
+          {step === 3 && (
+            <Bubble from="them">
+              {result || "Thanks — I'll get back to you soon!"}
+            </Bubble>
+          )}
+
+          <div ref={bottomRef} />
         </div>
+
+        {/* Interactive Input Container Block */}
+        <div className="p-3 border-t border-slate-200 dark:border-white/5 bg-slate-100 dark:bg-zinc-950">
+          {step === 0 && (
+            <ChatInput
+              value={values.name}
+              onChange={(v) => setValues((s) => ({ ...s, name: v }))}
+              onSubmit={handleNext("name")}
+              placeholder="Type your name..."
+            />
+          )}
+
+          {step === 1 && !showTyping && (
+            <ChatInput
+              type="email"
+              value={values.email}
+              onChange={(v) => setValues((s) => ({ ...s, email: v }))}
+              onSubmit={handleNext("email")}
+              placeholder="you@email.com"
+            />
+          )}
+
+          {step === 2 && !showTyping && (
+            <ChatInput
+              textarea
+              value={values.message}
+              onChange={(v) => setValues((s) => ({ ...s, message: v }))}
+              onSubmit={handleSubmit}
+              placeholder="Write your message..."
+              loading={status === "sending"}
+            />
+          )}
+
+          {step === 3 && (
+            <div className="text-center py-2 text-xs font-mono text-slate-400 dark:text-slate-500">
+              // Sync terminal connection closed.
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Direct links footer */}
+      <div className="max-w-md mx-auto mt-8 flex flex-wrap justify-center gap-x-6 gap-y-2 text-xs font-mono text-slate-400 dark:text-slate-500">
+        <a
+          href="mailto:amanullahqurayshi@gmail.com"
+          className="hover:text-amber-500 transition-colors duration-200"
+        >
+          email
+        </a>
+        <a
+          href="https://github.com/Ahmad-khan-1"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="hover:text-amber-500 transition-colors duration-200"
+        >
+          github
+        </a>
+        <a
+          href="https://www.linkedin.com/in/ahmad-mujtaba-aman/"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="hover:text-amber-500 transition-colors duration-200"
+        >
+          linkedin
+        </a>
       </div>
     </div>
   );
 };
 
-// Reusable field with animated underline focus (no border-box lift/shadow)
-const FormField = ({ name, label, type, textarea }) => {
-  const [focused, setFocused] = useState(false);
+// Chat Bubble Sub-component
+const Bubble = ({ from, children }) => (
+  <motion.div
+    initial={{ opacity: 0, y: 6, scale: 0.98 }}
+    animate={{ opacity: 1, y: 0, scale: 1 }}
+    transition={{ duration: 0.2 }}
+    className={`max-w-[85%] px-4 py-2 rounded-xl text-sm leading-relaxed tracking-wide ${
+      from === "them"
+        ? "self-start bg-white dark:bg-zinc-900 text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-white/5 rounded-tl-sm"
+        : "self-end bg-amber-400 text-slate-950 font-medium rounded-tr-sm"
+    }`}
+  >
+    {children}
+  </motion.div>
+);
+
+// Three-dot Indicator
+const TypingBubble = () => (
+  <div className="self-start bg-white dark:bg-zinc-900 px-4 py-3 border border-slate-200 dark:border-white/5 rounded-xl rounded-tl-sm flex gap-1">
+    {[0, 1, 2].map((i) => (
+      <motion.span
+        key={i}
+        animate={{ y: [0, -3, 0] }}
+        transition={{ duration: 0.5, repeat: Infinity, delay: i * 0.12 }}
+        className="w-1.5 h-1.5 rounded-full bg-slate-400 dark:bg-zinc-500"
+      />
+    ))}
+  </div>
+);
+
+// Unified Chat Input Action block
+const ChatInput = ({
+  value,
+  onChange,
+  onSubmit,
+  placeholder,
+  type = "text",
+  textarea,
+  loading,
+}) => {
   const Tag = textarea ? "textarea" : "input";
 
   return (
-    <div className="mb-6 relative">
-      <label
-        htmlFor={name}
-        className="block text-xs uppercase tracking-wide text-slate-500 dark:text-gray-500 mb-2"
-      >
-        {label}
-      </label>
+    <motion.form
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      onSubmit={onSubmit}
+      className="flex items-end gap-2 w-full"
+    >
       <Tag
-        id={name}
-        name={name}
         type={type}
         required
-        rows={textarea ? 4 : undefined}
-        onFocus={() => setFocused(true)}
-        onBlur={() => setFocused(false)}
-        className="w-full bg-transparent outline-none py-2 text-slate-950 dark:text-white resize-none"
+        rows={textarea ? 2 : undefined}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
+        autoComplete="off"
+        className="flex-1 bg-white dark:bg-zinc-900 rounded-xl px-4 py-2.5 text-sm outline-none border border-slate-300 dark:border-white/5 focus:border-amber-400 text-slate-900 dark:text-white placeholder:text-slate-400/70 resize-none transition-colors duration-150"
+        onKeyDown={(e) => {
+          if (textarea && e.key === "Enter" && !e.shiftKey) {
+            e.preventDefault();
+            onSubmit(e);
+          }
+        }}
       />
-      <div className="relative h-[1px] bg-slate-300 dark:bg-white/15 mt-1">
-        <motion.div
-          initial={{ scaleX: 0 }}
-          animate={{ scaleX: focused ? 1 : 0 }}
-          transition={{ duration: 0.3, ease: "easeOut" }}
-          style={{ transformOrigin: "left" }}
-          className="absolute inset-0 h-[2px] bg-black dark:bg-white -top-[0.5px]"
-        />
-      </div>
-    </div>
+      <button
+        type="submit"
+        disabled={loading}
+        className="w-10 h-10 flex-shrink-0 rounded-xl bg-slate-950 dark:bg-amber-400 text-white dark:text-slate-950 flex items-center justify-center disabled:opacity-40 hover:opacity-90 active:scale-95 transition-all"
+      >
+        {loading ? (
+          <span className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+        ) : (
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M2 21l21-9L2 3v7l15 2-15 2v7z" />
+          </svg>
+        )}
+      </button>
+    </motion.form>
   );
 };
 
