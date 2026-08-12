@@ -104,6 +104,15 @@ export const workData = [
     liveLink: "https://powerhoue-gym.vercel.app/",
     githubLink: "https://github.com/Ahmad-khan-1/Powerhoue-gym",
   },
+  {
+    title: "AI Interview Coach",
+    description:
+      "AI-powered mock interview platform that generates questions and gives real-time feedback on answers.",
+    tech: ["Next.js", "OpenAI API", "Tailwind CSS"],
+    bgImage: "/ai-interview-coach.png",
+    liveLink: "https://ai-interview-coach-sand.vercel.app/",
+    githubLink: "https://github.com/Ahmad-khan-1/ai-interview-coach",
+  },
 ];
 export const serviceData = [
   {
